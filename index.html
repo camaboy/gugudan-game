@@ -173,7 +173,6 @@ button{font:inherit;cursor:pointer}
         <div class="q" id="questionText">2 × 3 = ?</div>
         <div class="choices" id="choices"></div>
         <div class="feedback" id="feedback"></div>
-        <button class="next-btn hidden" id="nextBtn">다음 문제</button>
       </div>
     </div>
     <div class="progress"><div class="bar" id="bar"></div></div>
@@ -267,32 +266,69 @@ function makeChoices(correct){
   return shuffle([...set])
 }
 function renderQuestion(){
-  answered=false;$("#feedback").textContent="";$("#feedback").className="feedback";$("#nextBtn").classList.add("hidden");
-  const [a,b]=questions[idx],correct=a*b;
-  $("#questionText").textContent=`${a} × ${b} = ?`;$("#count").textContent=idx+1;
+  answered=false;
+  const fb=$("#feedback");
+  fb.textContent="";
+  fb.className="feedback";
+
+  const [a,b]=questions[idx];
+  const correct=a*b;
+
+  $("#questionText").textContent=`${a} × ${b} = ?`;
+  $("#count").textContent=idx+1;
   $("#bar").style.width=`${(idx/questions.length)*100}%`;
-  const box=$("#choices");box.innerHTML="";
-  makeChoices(correct).forEach(v=>{
-    const btn=document.createElement("button");btn.className="choice";btn.textContent=v;
-    btn.onclick=()=>chooseAnswer(btn,v,correct);box.appendChild(btn)
-  })
+
+  const box=$("#choices");
+  box.innerHTML="";
+
+  const choiceValues=makeChoices(correct);
+  choiceValues.forEach(v=>{
+    const btn=document.createElement("button");
+    btn.className="choice";
+    btn.textContent=v;
+    btn.onclick=()=>chooseAnswer(btn,v,correct);
+    box.appendChild(btn);
+  });
 }
 function chooseAnswer(btn,value,correct){
-  if(answered)return;answered=true;
-  const buttons=[...document.querySelectorAll(".choice")];buttons.forEach(b=>b.disabled=true);
+  if(answered)return;
+  answered=true;
+
+  const buttons=[...document.querySelectorAll(".choice")];
+  buttons.forEach(b=>b.disabled=true);
   const fb=$("#feedback");
+
   if(value===correct){
-    streak++;const bonus=Math.min(streak-1,5)*2;score+=10+bonus;
-    btn.classList.add("correct");fb.textContent=bonus?`정답! +${10+bonus}점 🔥`:"정답! +10점 🎉";fb.className="feedback good";beep(true)
+    streak++;
+    const bonus=Math.min(streak-1,5)*2;
+    score+=10+bonus;
+    btn.classList.add("correct");
+    fb.textContent=bonus?`정답! +${10+bonus}점 🔥`:"정답! +10점 🎉";
+    fb.className="feedback good";
+    beep(true);
   }else{
-    streak=0;btn.classList.add("wrong");
+    streak=0;
+    btn.classList.add("wrong");
     buttons.find(b=>Number(b.textContent)===correct)?.classList.add("correct");
-    fb.textContent=`아쉬워! 정답은 ${correct}이야.`;fb.className="feedback bad";beep(false)
+    fb.textContent=`아쉬워! 정답은 ${correct}이야.`;
+    fb.className="feedback bad";
+    beep(false);
   }
-  $("#score").textContent=score;$("#streak").textContent=streak;$("#bar").style.width=`${((idx+1)/questions.length)*100}%`;
-  const n=$("#nextBtn");n.textContent=idx===questions.length-1?"결과 보기":"다음 문제";n.classList.remove("hidden")
+
+  $("#score").textContent=score;
+  $("#streak").textContent=streak;
+  $("#bar").style.width=`${((idx+1)/questions.length)*100}%`;
+
+  // 정답/오답을 잠깐 보여준 뒤 자동으로 다음 문제로 이동
+  setTimeout(()=>{
+    if(idx>=questions.length-1){
+      finishGame();
+    }else{
+      idx++;
+      renderQuestion();
+    }
+  }, 1000);
 }
-$("#nextBtn").onclick=()=>{if(idx>=questions.length-1)finishGame();else{idx++;renderQuestion()}};
 function finishGame(){
   const ratio=Math.min(score/(questions.length*10),1);
   $("#stars").textContent=ratio>=.9?"⭐⭐⭐":ratio>=.65?"⭐⭐":"⭐";
