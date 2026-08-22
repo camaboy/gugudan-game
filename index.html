@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>구구단 챌린지</title>
+<style>
+  :root{
+    --bg1:#fff8e8;
+    --bg2:#eaf6ff;
+    --card:#ffffff;
+    --text:#24324a;
+    --muted:#6f7b91;
+    --accent:#ff8b5c;
+    --accent2:#5aa9ff;
+    --good:#2bb673;
+    --bad:#ee5b5b;
+    --line:#e8edf5;
+    --shadow:0 14px 40px rgba(55,76,110,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:system-ui,-apple-system,"Pretendard","Noto Sans KR",Arial,sans-serif;
+    color:var(--text);
+    background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  }
+  button,input{font:inherit}
+  button{cursor:pointer}
+  .wrap{
+    width:min(920px,92vw);
+    margin:0 auto;
+    padding:28px 0 44px;
+  }
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .brand{
+    font-weight:900;
+    font-size:clamp(24px,5vw,38px);
+    letter-spacing:-.04em;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:14px;
+    margin-top:4px;
+  }
+  .sound{
+    border:0;
+    background:#fff;
+    border-radius:14px;
+    padding:10px 13px;
+    box-shadow:var(--shadow);
+  }
+  .panel{
+    background:rgba(255,255,255,.92);
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:24px;
+    padding:22px;
+    box-shadow:var(--shadow);
+  }
+  .stage-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+  }
+  .stage{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:20px;
+    padding:18px;
+    text-align:left;
+    transition:.18s ease;
+    min-height:155px;
+  }
+  .stage:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(45,68,100,.10)}
+  .stage .num{
+    width:34px;height:34px;border-radius:50%;
+    display:grid;place-items:center;
+    font-weight:900;color:#fff;background:var(--accent2);
+    margin-bottom:12px;
+  }
+  .stage:nth-child(2) .num{background:#8b7cf6}
+  .stage:nth-child(3) .num{background:#36b98a}
+  .stage:nth-child(4) .num{background:#ff7a73}
+  .stage h3{margin:0 0 6px;font-size:20px}
+  .stage p{margin:0;color:var(--muted);line-height:1.5}
+  .footer-note{
+    margin-top:14px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .hidden{display:none!important}
+  .game-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .back{
+    border:0;background:#f2f5fa;color:var(--text);
+    padding:10px 14px;border-radius:13px;font-weight:800;
+  }
+  .status{
+    display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;
+  }
+  .pill{
+    background:#f5f7fb;border:1px solid var(--line);
+    padding:8px 11px;border-radius:999px;font-size:13px;font-weight:800;
+  }
+  .title{
+    text-align:center;
+    margin:8px 0 18px;
+  }
+  .title h2{margin:0 0 6px;font-size:clamp(24px,5vw,34px)}
+  .title p{margin:0;color:var(--muted)}
+  .dan-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:9px;
+    margin:18px 0;
+  }
+  .dan-btn{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:14px;
+    padding:13px 8px;
+    font-weight:900;
+    font-size:17px;
+  }
+  .dan-btn:hover{background:#f7fbff}
+  .question{
+    display:grid;
+    place-items:center;
+    min-height:250px;
+    text-align:center;
+  }
+  .q{
+    font-weight:1000;
+    font-size:clamp(42px,10vw,78px);
+    letter-spacing:-.04em;
+    margin-bottom:18px;
+  }
+  .answer-row{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    width:min(460px,100%);
+    margin:0 auto;
+  }
+  #answer{
+    width:100%;
+    min-width:0;
+    border:2px solid #dce5f1;
+    background:#fff;
+    border-radius:17px;
+    padding:15px 16px;
+    text-align:center;
+    font-size:25px;
+    font-weight:900;
+    outline:none;
+  }
+  #answer:focus{border-color:var(--accent2);box-shadow:0 0 0 4px rgba(90,169,255,.13)}
+  .submit{
+    border:0;background:var(--accent2);color:#fff;
+    border-radius:17px;padding:0 22px;font-weight:900;
+  }
+  .feedback{
+    min-height:34px;
+    margin-top:13px;
+    font-size:20px;
+    font-weight:900;
+  }
+  .feedback.good{color:var(--good)}
+  .feedback.bad{color:var(--bad)}
+  .progress{
+    height:11px;background:#eef2f7;border-radius:99px;overflow:hidden;margin-top:18px;
+  }
+  .bar{height:100%;width:0;background:linear-gradient(90deg,#5aa9ff,#7c79f6);transition:.25s}
+  .result{
+    text-align:center;
+    padding:20px 0 6px;
+  }
+  .trophy{font-size:64px}
+  .result h2{font-size:32px;margin:8px 0}
+  .big-score{font-size:46px;font-weight:1000;margin:12px 0}
+  .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .primary,.secondary{
+    border:0;border-radius:15px;padding:13px 18px;font-weight:900;
+  }
+  .primary{background:var(--accent2);color:#fff}
+  .secondary{background:#f0f3f8;color:var(--text)}
+  .stars{font-size:30px;letter-spacing:5px}
+  .hint{
+    text-align:center;color:var(--muted);font-size:13px;margin-top:10px
+  }
+  @media (max-width:650px){
+    .wrap{padding-top:18px}
+    .panel{padding:16px;border-radius:20px}
+    .stage-grid{grid-template-columns:1fr}
+    .stage{min-height:128px}
+    .dan-grid{grid-template-columns:repeat(3,1fr)}
+    .answer-row{flex-direction:column}
+    .submit{padding:14px}
+    .game-head{align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="brand">✖️ 구구단 챌린지</div>
+      <div class="sub">1단부터 15단까지 차근차근 도전!</div>
+    </div>
+    <button class="sound" id="soundBtn" aria-label="소리 켜기/끄기">🔊</button>
+  </div>
+
+  <section class="panel" id="home">
+    <div class="stage-grid">
+      <button class="stage" data-mode="study9">
+        <div class="num">1</div>
+        <h3>1단 ~ 9단 공부</h3>
+        <p>원하는 단을 골라 순서대로 연습해요.</p>
+      </button>
+      <button class="stage" data-mode="study15">
+        <div class="num">2</div>
+        <h3>1단 ~ 15단 공부</h3>
+        <p>15단까지 골라서 집중 연습해요.</p>
+      </button>
+      <button class="stage" data-mode="random9">
+        <div class="num">3</div>
+        <h3>1단 ~ 9단 랜덤 게임</h3>
+        <p>랜덤 10문제를 풀고 최고 점수에 도전!</p>
+      </button>
+      <button class="stage" data-mode="random15">
+        <div class="num">4</div>
+        <h3>1단 ~ 15단 랜덤 게임</h3>
+        <p>15단까지 랜덤 15문제! 최종 도전 모드.</p>
+      </button>
+    </div>
+    <div class="footer-note">정답을 입력하고 Enter를 눌러도 돼요.</div>
+  </section>
+
+  <section class="panel hidden" id="selectDan">
+    <div class="game-head">
+      <button class="back" onclick="goHome()">← 처음으로</button>
+      <div class="pill" id="selectLabel">단 선택</div>
+    </div>
+    <div class="title">
+      <h2>연습할 단을 골라요</h2>
+      <p>한 단씩 확실하게 외워보자!</p>
+    </div>
+    <div class="dan-grid" id="danGrid"></div>
+  </section>
+
+  <section class="panel hidden" id="game">
+    <div class="game-head">
+      <button class="back" onclick="goHome()">← 처음으로</button>
+      <div class="status">
+        <div class="pill">점수 <span id="score">0</span></div>
+        <div class="pill">연속 <span id="streak">0</span>🔥</div>
+        <div class="pill"><span id="count">1</span>/<span id="total">10</span></div>
+      </div>
+    </div>
+    <div class="title">
+      <h2 id="gameTitle">구구단 문제</h2>
+      <p id="gameDesc">정답을 입력해요.</p>
+    </div>
+
+    <div class="question">
+      <div>
+        <div class="q" id="questionText">2 × 3 = ?</div>
+        <div class="answer-row">
+          <input id="answer" type="number" inputmode="numeric" autocomplete="off" placeholder="정답">
+          <button class="submit" id="submitBtn">확인</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="hint">정답이면 +10점, 연속 정답이면 보너스 점수!</div>
+  </section>
+
+  <section class="panel hidden" id="result">
+    <div class="result">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars">⭐⭐⭐</div>
+      <h2>도전 완료!</h2>
+      <div class="big-score"><span id="finalScore">0</span>점</div>
+      <p id="resultText">정말 잘했어요!</p>
+      <div class="result-actions">
+        <button class="primary" id="retryBtn">한 번 더</button>
+        <button class="secondary" onclick="goHome()">다른 단계</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+let soundOn = true;
+let currentMode = null;
+let selectedDan = null;
+let questions = [];
+let idx = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+
+const $ = (s)=>document.querySelector(s);
+const home = $("#home"), selectDan = $("#selectDan"), game = $("#game"), result = $("#result");
+const answer = $("#answer"), feedback = $("#feedback");
+
+function show(el){
+  [home, selectDan, game, result].forEach(x=>x.classList.add("hidden"));
+  el.classList.remove("hidden");
+}
+
+function beep(ok=true){
+  if(!soundOn) return;
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.value = ok ? 720 : 220;
+    gain.gain.setValueAtTime(.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .16);
+    osc.start();
+    osc.stop(ctx.currentTime + .16);
+  }catch(e){}
+}
+
+$("#soundBtn").addEventListener("click",()=>{
+  soundOn=!soundOn;
+  $("#soundBtn").textContent=soundOn?"🔊":"🔇";
+});
+
+document.querySelectorAll(".stage").forEach(btn=>{
+  btn.addEventListener("click",()=>startMode(btn.dataset.mode));
+});
+
+function startMode(mode){
+  currentMode = mode;
+  if(mode==="study9" || mode==="study15"){
+    const maxDan = mode==="study9" ? 9 : 15;
+    $("#selectLabel").textContent = `1단 ~ ${maxDan}단`;
+    buildDanButtons(maxDan);
+    show(selectDan);
+  }else{
+    selectedDan = null;
+    beginGame();
+  }
+}
+
+function buildDanButtons(maxDan){
+  const grid=$("#danGrid");
+  grid.innerHTML="";
+  for(let d=1; d<=maxDan; d++){
+    const b=document.createElement("button");
+    b.className="dan-btn";
+    b.textContent=`${d}단`;
+    b.onclick=()=>{ selectedDan=d; beginGame(); };
+    grid.appendChild(b);
+  }
+}
+
+function makeQuestions(){
+  let arr=[];
+  if(currentMode==="study9"){
+    for(let n=1;n<=9;n++) arr.push([selectedDan,n]);
+  }else if(currentMode==="study15"){
+    for(let n=1;n<=15;n++) arr.push([selectedDan,n]);
+  }else if(currentMode==="random9"){
+    for(let i=0;i<10;i++) arr.push([rand(1,9),rand(1,9)]);
+  }else if(currentMode==="random15"){
+    for(let i=0;i<15;i++) arr.push([rand(1,15),rand(1,15)]);
+  }
+  return arr;
+}
+
+function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+function beginGame(){
+  questions=makeQuestions();
+  idx=0; score=0; streak=0; answered=false;
+  $("#score").textContent=score;
+  $("#streak").textContent=streak;
+  $("#total").textContent=questions.length;
+  $("#gameTitle").textContent = selectedDan ? `${selectedDan}단 연습` :
+    (currentMode==="random9" ? "1~9단 랜덤 게임" : "1~15단 랜덤 게임");
+  $("#gameDesc").textContent = selectedDan ? "순서대로 풀면서 외워요." : "문제가 랜덤으로 나와요!";
+  show(game);
+  renderQuestion();
+}
+
+function renderQuestion(){
+  answered=false;
+  feedback.textContent="";
+  feedback.className="feedback";
+  answer.value="";
+  answer.disabled=false;
+  $("#submitBtn").textContent="확인";
+  const [a,b]=questions[idx];
+  $("#questionText").textContent=`${a} × ${b} = ?`;
+  $("#count").textContent=idx+1;
+  $("#bar").style.width=`${(idx/questions.length)*100}%`;
+  setTimeout(()=>answer.focus(),60);
+}
+
+function submitAnswer(){
+  if(answered){
+    nextQuestion();
+    return;
+  }
+  const val=Number(answer.value);
+  if(answer.value.trim()==="") return;
+  const [a,b]=questions[idx], correct=a*b;
+  answered=true;
+  answer.disabled=true;
+
+  if(val===correct){
+    streak++;
+    const bonus=Math.min(streak-1,5)*2;
+    score+=10+bonus;
+    feedback.textContent=bonus>0 ? `정답! +${10+bonus}점 🔥` : "정답! +10점 🎉";
+    feedback.className="feedback good";
+    beep(true);
+  }else{
+    streak=0;
+    feedback.textContent=`아쉬워! 정답은 ${correct}이야.`;
+    feedback.className="feedback bad";
+    beep(false);
+  }
+  $("#score").textContent=score;
+  $("#streak").textContent=streak;
+  $("#submitBtn").textContent = idx===questions.length-1 ? "결과 보기" : "다음";
+  $("#bar").style.width=`${((idx+1)/questions.length)*100}%`;
+}
+
+function nextQuestion(){
+  if(idx>=questions.length-1){
+    finishGame();
+  }else{
+    idx++;
+    renderQuestion();
+  }
+}
+
+$("#submitBtn").addEventListener("click",submitAnswer);
+answer.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    submitAnswer();
+  }
+});
+
+function finishGame(){
+  const maxBase=questions.length*10;
+  // 점수에는 연속보너스가 있어 비율 계산 시 기본점수 기준으로 정답수에 가깝게 보정
+  const normalized=Math.min(score/maxBase,1);
+  let stars="⭐";
+  let trophy="🥉";
+  let text="조금만 더 연습하면 훨씬 빨라질 거야!";
+  if(normalized>=.9){stars="⭐⭐⭐";trophy="🏆";text="완벽에 가까워! 구구단 고수!";}
+  else if(normalized>=.65){stars="⭐⭐";trophy="🥈";text="잘했어! 한 번 더 하면 더 높게 갈 수 있어!";}
+  $("#stars").textContent=stars;
+  $("#trophy").textContent=trophy;
+  $("#finalScore").textContent=score;
+  $("#resultText").textContent=text;
+  show(result);
+}
+
+$("#retryBtn").addEventListener("click",()=>{
+  if(currentMode==="study9" || currentMode==="study15"){
+    beginGame();
+  }else{
+    beginGame();
+  }
+});
+
+function goHome(){
+  show(home);
+  answer.blur();
+}
+</script>
+</body>
+</html>
