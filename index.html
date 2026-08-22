@@ -84,6 +84,47 @@ button{font:inherit;cursor:pointer}
 .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
 .primary,.secondary{border:0;border-radius:15px;padding:13px 18px;font-weight:1000}
 .primary{background:var(--accent);color:#fff}.secondary{background:#f0f3f8;color:var(--text)}
+
+/* 정답/오답 GIF 효과 */
+.gif-pop{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(24,31,45,.38);
+  padding:20px;
+}
+.gif-pop.hidden{display:none!important}
+.gif-pop-card{
+  background:#fff;
+  border-radius:24px;
+  padding:14px;
+  box-shadow:0 18px 60px rgba(0,0,0,.28);
+  animation:popIn .18s ease-out;
+}
+.gif-pop img{
+  display:block;
+  width:min(360px,82vw);
+  max-height:46vh;
+  object-fit:contain;
+  border-radius:16px;
+}
+.result-gif{
+  display:none;
+  width:min(390px,86vw);
+  max-height:48vh;
+  object-fit:contain;
+  margin:14px auto 6px;
+  border-radius:18px;
+}
+.result-gif.show{display:block}
+@keyframes popIn{
+  from{transform:scale(.86);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
 @media(max-width:700px){
   .wrap{padding-top:18px}.panel{padding:16px;border-radius:20px}
   .stage-grid{grid-template-columns:1fr}.stage{min-height:125px}
@@ -96,6 +137,13 @@ button{font:inherit;cursor:pointer}
 </style>
 </head>
 <body>
+
+<div class="gif-pop hidden" id="gifPop" aria-hidden="true">
+  <div class="gif-pop-card">
+    <img id="gifPopImage" src="" alt="게임 반응 GIF">
+  </div>
+</div>
+
 <div class="wrap">
   <div class="top">
     <div>
@@ -183,6 +231,7 @@ button{font:inherit;cursor:pointer}
     <div class="result">
       <div class="trophy" id="trophy">🏆</div>
       <div class="stars" id="stars">⭐⭐⭐</div>
+      <img class="result-gif" id="resultGif" alt="만점 축하 GIF">
       <h2>도전 완료!</h2>
       <div class="big-score"><span id="finalScore">0</span>점</div>
       <p id="resultText">정말 잘했어요!</p>
@@ -196,6 +245,30 @@ button{font:inherit;cursor:pointer}
 
 <script>
 let soundOn=true, currentMode=null, selectedDan=null, questions=[], idx=0, score=0, streak=0, answered=false;
+
+const successGifs=["gif/성공1.gif","gif/성공2.gif","gif/성공3.gif"];
+const failGifs=["gif/틀림0.gif","gif/틀림1.gif","gif/틀림2.gif","gif/틀림3.gif"];
+const perfectGif="gif/만점1.gif";
+let correctCount=0;
+
+function showReactionGif(ok){
+  return new Promise(resolve=>{
+    const list=ok?successGifs:failGifs;
+    const src=list[rand(0,list.length-1)];
+    const pop=$("#gifPop");
+    const img=$("#gifPopImage");
+    img.src=src;
+    pop.classList.remove("hidden");
+    pop.setAttribute("aria-hidden","false");
+    setTimeout(()=>{
+      pop.classList.add("hidden");
+      pop.setAttribute("aria-hidden","true");
+      img.src="";
+      resolve();
+    },1150);
+  });
+}
+
 const $=s=>document.querySelector(s);
 const sections=["home","study","selectDan","game","result"].map(id=>$("#"+id));
 
@@ -251,7 +324,7 @@ function makeQuestions(){
   return a
 }
 function beginGame(){
-  questions=makeQuestions();idx=0;score=0;streak=0;answered=false;
+  questions=makeQuestions();idx=0;score=0;streak=0;answered=false;correctCount=0;
   $("#score").textContent=0;$("#streak").textContent=0;$("#total").textContent=questions.length;
   $("#gameTitle").textContent=selectedDan?`${selectedDan}단 게임`:(currentMode==="random9"?"1~9단 랜덤 게임":"1~15단 랜덤 게임");
   show($("#game"));renderQuestion()
@@ -290,15 +363,17 @@ function renderQuestion(){
     box.appendChild(btn);
   });
 }
-function chooseAnswer(btn,value,correct){
+async function chooseAnswer(btn,value,correct){
   if(answered)return;
   answered=true;
 
   const buttons=[...document.querySelectorAll(".choice")];
   buttons.forEach(b=>b.disabled=true);
   const fb=$("#feedback");
+  const isCorrect=value===correct;
 
-  if(value===correct){
+  if(isCorrect){
+    correctCount++;
     streak++;
     const bonus=Math.min(streak-1,5)*2;
     score+=10+bonus;
@@ -319,22 +394,34 @@ function chooseAnswer(btn,value,correct){
   $("#streak").textContent=streak;
   $("#bar").style.width=`${((idx+1)/questions.length)*100}%`;
 
-  // 정답/오답을 잠깐 보여준 뒤 자동으로 다음 문제로 이동
-  setTimeout(()=>{
-    if(idx>=questions.length-1){
-      finishGame();
-    }else{
-      idx++;
-      renderQuestion();
-    }
-  }, 1000);
+  await showReactionGif(isCorrect);
+
+  if(idx>=questions.length-1){
+    finishGame();
+  }else{
+    idx++;
+    renderQuestion();
+  }
 }
 function finishGame(){
-  const ratio=Math.min(score/(questions.length*10),1);
-  $("#stars").textContent=ratio>=.9?"⭐⭐⭐":ratio>=.65?"⭐⭐":"⭐";
-  $("#trophy").textContent=ratio>=.9?"🏆":ratio>=.65?"🥈":"🥉";
-  $("#resultText").textContent=ratio>=.9?"완벽에 가까워! 구구단 고수!":ratio>=.65?"잘했어! 한 번 더 하면 더 높게 갈 수 있어!":"조금만 더 연습하면 훨씬 빨라질 거야!";
-  $("#finalScore").textContent=score;show($("#result"))
+  const ratio=correctCount/questions.length;
+  const perfect=correctCount===questions.length;
+  $("#stars").textContent=perfect?"⭐⭐⭐":ratio>=.75?"⭐⭐":"⭐";
+  $("#trophy").textContent=perfect?"🏆":ratio>=.75?"🥈":"🥉";
+
+  const rg=$("#resultGif");
+  if(perfect){
+    rg.src=perfectGif;
+    rg.classList.add("show");
+    $("#resultText").textContent="전 문제 정답! 완벽해! 🎉";
+  }else{
+    rg.src="";
+    rg.classList.remove("show");
+    $("#resultText").textContent=ratio>=.75?"잘했어! 조금만 더 하면 만점이야!":"한 번 더 도전해보자!";
+  }
+
+  $("#finalScore").textContent=score;
+  show($("#result"));
 }
 $("#retryBtn").onclick=()=>beginGame();
 </script>
